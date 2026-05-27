@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "23058298757",
+    "project_id": "culinax-app",
+    "storage_bucket": "culinax-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:23058298757:android:7c4212478be4dabf7576ec",
+        "android_client_info": {
+          "package_name": "com.example.smart_pantry"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgWwYr6mg8uuip9oATgVQILrHjrjdhAzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
