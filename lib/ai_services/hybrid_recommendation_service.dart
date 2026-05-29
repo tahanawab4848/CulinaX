@@ -4,7 +4,6 @@ import '../models/pantry_item.dart';
 import '../models/recipe.dart';
 import '../services/recipe_engine.dart';
 import 'ai_chef_service.dart';
-import 'pantry_context_builder.dart';
 
 /// STEP 1: Rule-based scoring. STEP 2: AI explanations.
 class HybridRecommendationService {

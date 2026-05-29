@@ -14,14 +14,17 @@ class IngredientScannerScreen extends StatefulWidget {
   const IngredientScannerScreen({super.key});
 
   @override
-  State<IngredientScannerScreen> createState() => _IngredientScannerScreenState();
+  State<IngredientScannerScreen> createState() =>
+      _IngredientScannerScreenState();
 }
 
 class _IngredientScannerScreenState extends State<IngredientScannerScreen> {
   final ImagePicker _picker = ImagePicker();
   final ImageIngredientScanner _scanner = ImageIngredientScanner();
+
   File? _image;
   List<DetectedIngredient> _detected = [];
+  ScanMode? _scanMode;
   bool _scanning = false;
   String? _error;
 
@@ -35,6 +38,7 @@ class _IngredientScannerScreenState extends State<IngredientScannerScreen> {
     setState(() {
       _error = null;
       _detected = [];
+      _scanMode = null;
     });
     try {
       final file = await _picker.pickImage(
@@ -47,13 +51,17 @@ class _IngredientScannerScreenState extends State<IngredientScannerScreen> {
         _image = File(file.path);
         _scanning = true;
       });
-      final results = await _scanner.scanImage(_image!);
+
+      final result = await _scanner.scanImage(_image!);
       if (!mounted) return;
       setState(() {
-        _detected = results;
+        _detected = result.ingredients;
+        _scanMode = result.mode;
         _scanning = false;
-        if (results.isEmpty) {
-          _error = 'No ingredients detected. Try better lighting or a closer shot.';
+        if (result.ingredients.isEmpty) {
+          _error = result.mode == ScanMode.mlKitOffline
+              ? 'ML Kit could not identify ingredients. Try better lighting, a closer shot, or ensure internet is on for AI scanning.'
+              : 'No ingredients detected. Try a clearer photo with good lighting.';
         }
       });
     } catch (e) {
@@ -75,9 +83,100 @@ class _IngredientScannerScreenState extends State<IngredientScannerScreen> {
         );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Added ${item.nameEn} (${item.nameUr}) to pantry')),
+        SnackBar(
+          content: Text('Added ${item.nameEn} (${item.nameUr}) to pantry ✓'),
+          backgroundColor: C.g700,
+        ),
       );
     }
+  }
+
+  Widget _categoryBadge(String category) {
+    final colors = <String, Color>{
+      'Vegetable':       const Color(0xFF4CAF50),
+      'Fruit':           const Color(0xFFFF9800),
+      'Protein':         const Color(0xFFF44336),
+      'Dairy':           const Color(0xFF2196F3),
+      'Grain':           const Color(0xFF795548),
+      'Lentil':          const Color(0xFF8BC34A),
+      'Spice':           const Color(0xFFFF5722),
+      'Herb':            const Color(0xFF009688),
+      'Oil & Fat':       const Color(0xFFFFEB3B),
+      'Condiment':       const Color(0xFF9C27B0),
+      'Nut & Dry Fruit': const Color(0xFFBF9000),
+      'Sweetener':       const Color(0xFFE91E63),
+      'Beverage':        const Color(0xFF00BCD4),
+    };
+    final color = colors[category] ?? const Color(0xFF607D8B);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        category,
+        style: TextStyle(
+            color: color, fontSize: 10, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Widget _scanModeBadge() {
+    final Color bgColor;
+    final Color borderColor;
+    final Color textColor;
+    final IconData icon;
+    final String text;
+
+    if (_scanMode == ScanMode.geminiVision) {
+      bgColor = C.v600.withValues(alpha: 0.15);
+      borderColor = C.v400.withValues(alpha: 0.5);
+      textColor = C.v400;
+      icon = Icons.auto_awesome;
+      text = 'Gemini AI Vision';
+    } else if (_scanMode == ScanMode.groqVision) {
+      bgColor = C.a600.withValues(alpha: 0.15);
+      borderColor = C.a400.withValues(alpha: 0.5);
+      textColor = C.a400;
+      icon = Icons.bolt;
+      text = 'Groq Llama 3.2 Vision';
+    } else {
+      bgColor = C.t600.withValues(alpha: 0.15);
+      borderColor = C.t400.withValues(alpha: 0.5);
+      textColor = C.t400;
+      icon = Icons.memory;
+      text = 'ML Kit Offline';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 13,
+            color: textColor,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -96,11 +195,14 @@ class _IngredientScannerScreenState extends State<IngredientScannerScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // ── Scan buttons ─────────────────────────────────────────────────
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _scanning ? null : () => _pickImage(ImageSource.camera),
+                  onPressed: _scanning
+                      ? null
+                      : () => _pickImage(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt),
                   label: const Text('Camera'),
                 ),
@@ -108,25 +210,66 @@ class _IngredientScannerScreenState extends State<IngredientScannerScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _scanning ? null : () => _pickImage(ImageSource.gallery),
+                  onPressed: _scanning
+                      ? null
+                      : () => _pickImage(ImageSource.gallery),
                   icon: const Icon(Icons.photo_library),
                   label: const Text('Gallery'),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          if (_image != null)
+
+          // ── Info banner ───────────────────────────────────────────────────
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: C.v600.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: C.v600.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.auto_awesome, color: C.v400, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'AI Vision detects any ingredient including desi items. '
+                    'Works best with clear, well-lit photos.',
+                    style: T.body(12, c: C.white70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Image preview ─────────────────────────────────────────────────
+          if (_image != null) ...[
+            const SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.file(_image!, height: 200, width: double.infinity, fit: BoxFit.cover),
+              child: Image.file(_image!,
+                  height: 200, width: double.infinity, fit: BoxFit.cover),
             ),
+          ],
+
+          // ── Scanning indicator ────────────────────────────────────────────
           if (_scanning) ...[
             const SizedBox(height: 24),
-            const Center(child: CircularProgressIndicator(color: C.g500)),
-            const SizedBox(height: 8),
-            Text('Analyzing image…', style: T.body(14), textAlign: TextAlign.center),
+            const Center(
+                child: CircularProgressIndicator(color: C.v400)),
+            const SizedBox(height: 12),
+            Text('Analyzing with AI Vision…',
+                style: T.body(14, c: C.v400),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 4),
+            Text('Identifying ingredients from photo',
+                style: T.body(12, c: C.white40),
+                textAlign: TextAlign.center),
           ],
+
+          // ── Error ─────────────────────────────────────────────────────────
           if (_error != null) ...[
             const SizedBox(height: 16),
             Container(
@@ -136,35 +279,67 @@ class _IngredientScannerScreenState extends State<IngredientScannerScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: C.a500.withValues(alpha: 0.3)),
               ),
-              child: Text(_error!, style: T.body(13, c: C.a400)),
-            ),
-          ],
-          if (_detected.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Text('DETECTED INGREDIENTS', style: T.lbl(c: C.g400)),
-            const SizedBox(height: 12),
-            ..._detected.map(
-              (d) => Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                decoration: D.card(r: 14),
-                child: ListTile(
-                  leading: Text(d.icon, style: const TextStyle(fontSize: 28)),
-                  title: Text(d.nameEn, style: T.sub(14)),
-                  subtitle: Text(
-                    '${d.nameUr} · ${(d.confidence * 100).round()}% · ${d.category}',
-                    style: T.body(12, c: C.white40),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.add_circle, color: C.g500),
-                    onPressed: () => _addToPantry(d),
-                  ),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        color: C.a400, size: 18),
+                    const SizedBox(width: 8),
+                    Text('Detection failed',
+                        style: T.sub(13, c: C.a400)),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(_error!, style: T.body(12, c: C.white70)),
+                ],
               ),
             ),
+          ],
+
+          // ── Results ───────────────────────────────────────────────────────
+          if (_detected.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'DETECTED INGREDIENTS (${_detected.length})',
+                    style: T.lbl(c: C.g400),
+                  ),
+                ),
+                if (_scanMode != null) _scanModeBadge(),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            ..._detected.map((d) => Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: D.card(r: 14),
+                  child: ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    leading: Text(d.icon,
+                        style: const TextStyle(fontSize: 30)),
+                    title: Row(
+                      children: [
+                        Expanded(child: Text(d.nameEn, style: T.sub(14))),
+                        _categoryBadge(d.category),
+                      ],
+                    ),
+                    subtitle: Text(d.nameUr, style: T.body(12, c: C.white40)),
+                    trailing: IconButton(
+                      icon:
+                          const Icon(Icons.add_circle, color: C.g500, size: 28),
+                      onPressed: () => _addToPantry(d),
+                    ),
+                  ),
+                )),
+
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              height: 52,
+              child: ElevatedButton.icon(
                 onPressed: () async {
                   final nav = Navigator.of(context);
                   for (final d in _detected) {
@@ -176,15 +351,14 @@ class _IngredientScannerScreenState extends State<IngredientScannerScreen> {
                   }
                   if (mounted) nav.pop();
                 },
-                child: Text('Add All (${_detected.length})'),
+                icon: const Icon(Icons.playlist_add_check),
+                label: Text('Add All ${_detected.length} to Pantry'),
+                style: ElevatedButton.styleFrom(backgroundColor: C.g600),
               ),
             ),
           ],
-          const SizedBox(height: 16),
-          Text(
-            'Uses on-device ML to detect common desi ingredients. Works offline on mobile.',
-            style: T.body(12, c: C.white40),
-          ),
+
+          const SizedBox(height: 20),
         ],
       ),
     );

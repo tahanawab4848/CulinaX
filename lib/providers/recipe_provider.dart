@@ -150,14 +150,6 @@ class RecipeProvider extends ChangeNotifier {
   List<Recipe> get favoriteRecipes =>
       _recipes.where((r) => _favorites.contains(r.id)).toList();
 
-  Future<void> addCustomRecipe(Recipe recipe) async {
-    await _firestore.addRecipe(recipe);
-    if (!_recipes.any((r) => r.id == recipe.id)) {
-      _recipes = [..._recipes, recipe];
-      notifyListeners();
-    }
-  }
-
   @override
   void dispose() {
     _sub?.cancel();

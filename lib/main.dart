@@ -28,7 +28,7 @@ Future<void> main() async {
   );
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  bool firebaseFailed = false;
+  Widget home = const AppRoot();
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -36,7 +36,7 @@ Future<void> main() async {
     await NotificationService().init();
   } catch (e) {
     debugPrint('Firebase init failed: $e');
-    firebaseFailed = true;
+    home = const _FirebaseBootstrap(child: FirebaseSetupScreen());
   }
 
   runApp(
@@ -50,40 +50,22 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => AiChefProvider()),
         ChangeNotifierProvider(create: (_) => HybridRecommendationProvider()),
       ],
-      child: CulinaXApp(firebaseFailed: firebaseFailed),
+      child: home,
     ),
   );
 }
 
-class CulinaXApp extends StatefulWidget {
-  final bool firebaseFailed;
-  const CulinaXApp({super.key, required this.firebaseFailed});
-
-  @override
-  State<CulinaXApp> createState() => _CulinaXAppState();
-}
-
-class _CulinaXAppState extends State<CulinaXApp> {
-  late bool _showSetup;
-
-  @override
-  void initState() {
-    super.initState();
-    _showSetup = widget.firebaseFailed;
-  }
+class _FirebaseBootstrap extends StatelessWidget {
+  final Widget child;
+  const _FirebaseBootstrap({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    if (_showSetup) {
-      return MaterialApp(
-        title: 'CulinaX',
-        debugShowCheckedModeBanner: false,
-        theme: buildAppTheme(),
-        home: FirebaseSetupScreen(
-          onBypass: () => setState(() => _showSetup = false),
-        ),
-      );
-    }
-    return const AppRoot();
+    return MaterialApp(
+      title: 'CulinaX',
+      debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(),
+      home: child,
+    );
   }
 }

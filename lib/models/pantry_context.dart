@@ -1,6 +1,3 @@
-import 'pantry_item.dart';
-import 'recipe.dart';
-
 /// Structured snapshot passed to the AI layer (built from rule-based data).
 class PantryContext {
   final List<String> pantryItems;

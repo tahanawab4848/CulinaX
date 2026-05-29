@@ -50,8 +50,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   controller: _name,
                   style: T.body(15, c: C.white),
                   decoration: const InputDecoration(labelText: 'Full Name'),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Name required' : null,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Full name is required';
+                    }
+                    if (v.trim().length < 2) {
+                      return 'Name must be at least 2 characters';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -59,8 +66,18 @@ class _SignupScreenState extends State<SignupScreen> {
                   keyboardType: TextInputType.emailAddress,
                   style: T.body(15, c: C.white),
                   decoration: const InputDecoration(labelText: 'Email'),
-                  validator: (v) =>
-                      v == null || !v.contains('@') ? 'Valid email required' : null,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Email is required';
+                    }
+                    final emailRegex = RegExp(
+                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                    );
+                    if (!emailRegex.hasMatch(v.trim())) {
+                      return 'Enter a valid email address';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -68,8 +85,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   obscureText: true,
                   style: T.body(15, c: C.white),
                   decoration: const InputDecoration(labelText: 'Password'),
-                  validator: (v) =>
-                      v == null || v.length < 6 ? 'Min 6 characters' : null,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Password is required';
+                    }
+                    if (v.trim().length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
                 ),
                 if (auth.error != null) ...[
                   const SizedBox(height: 12),

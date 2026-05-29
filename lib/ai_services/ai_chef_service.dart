@@ -5,6 +5,7 @@ import '../models/recipe.dart';
 import 'ai_provider_interface.dart';
 import 'gemini_ai_service.dart';
 import 'openai_ai_service.dart';
+import 'groq_ai_service.dart';
 
 /// Generative AI layer — sits above rule-based engine.
 class AiChefService {
@@ -20,6 +21,7 @@ Keep answers concise unless generating a full recipe.
   Future<AiProviderInterface> _provider() async {
     final type = await AiConfig.getProviderType();
     if (type == AiProviderType.openai) return OpenAiAiService();
+    if (type == AiProviderType.groq) return GroqAiService();
     return GeminiAiService();
   }
 
@@ -152,7 +154,7 @@ Explain this step for a beginner (tips, safety, desi technique). Keep under 120 
       userPrompt: '''
 ${context.toPromptBlock()}
 
-Suggest 3 ${mealType} ideas (Pakistani / hostel-friendly if budget mode).
+Suggest 3 $mealType ideas (Pakistani / hostel-friendly if budget mode).
 For each: name, 1-line why, use expiring items when relevant.
 Support chai-time snacks if meal type is snack.
 ''',

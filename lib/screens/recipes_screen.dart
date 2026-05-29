@@ -5,7 +5,6 @@ import '../core/theme.dart';
 import '../providers/pantry_provider.dart';
 import '../providers/recipe_provider.dart';
 import '../widgets/recipe_card.dart';
-import 'add_recipe_screen.dart';
 import 'recipe_detail_screen.dart';
 
 class RecipesScreen extends StatelessWidget {
@@ -29,26 +28,8 @@ class RecipesScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('RECIPES', style: T.lbl(c: C.g400)),
-                          Text('Pakistani Kitchen', style: T.head(20)),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_photo_alternate_outlined, color: C.g400),
-                        tooltip: 'Share Custom Recipe',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AddRecipeScreen()),
-                        ),
-                      ),
-                    ],
-                  ),
+                  Text('RECIPES', style: T.lbl(c: C.g400)),
+                  Text('Pakistani Kitchen', style: T.head(20)),
                   const SizedBox(height: 12),
                   TextField(
                     onChanged: recipes.setSearchQuery,

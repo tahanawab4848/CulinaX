@@ -60,13 +60,6 @@ class HybridRecommendationProvider extends ChangeNotifier {
       );
     } catch (e) {
       _error = e.toString();
-      final context = PantryContextBuilder.build(
-        pantryItems: pantry,
-        recipes: recipes,
-        budgetMode: budgetMode,
-        cuisinePreference: cuisinePreference,
-        diet: diet,
-      );
       final matches = _service.computeMatches(
         recipes: recipes,
         pantry: pantry,
