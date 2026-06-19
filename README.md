@@ -24,7 +24,7 @@ STEP 2 — AI Layer (generative)
 
 ## AI Features
 
-| Feature | Layer |
+| **Feature** | **Layer** |
 |---------|--------|
 | Pantry CRUD, expiry alerts | Rule-based |
 | Recipe % match ranking | Rule-based |
