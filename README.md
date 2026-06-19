@@ -1,4 +1,4 @@
-# CulinaX — Hybrid Architecture
+# CulinaX — _Hybrid Architecture_
 
 **Flutter + Firebase + Generative AI (Gemini/OpenAI)**
 
