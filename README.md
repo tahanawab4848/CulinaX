@@ -2,7 +2,7 @@
 
 **Flutter + Firebase + Generative AI (Gemini/OpenAI)**
 
-Pakistani cooking assistant combining **deterministic rule-based pantry logic** with **generative AI intelligence**.
+**Pakistani** cooking assistant combining **deterministic rule-based pantry logic** with **generative AI intelligence**.
 
 ## Hybrid Flow
 
